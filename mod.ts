@@ -23,7 +23,7 @@ export type { IApgJsvFindResult } from "./src/interfaces/IApgJsvFindResult.ts";
 export { ApgJsv_SCHEMA_SCHEMA } from "./src/schemas/ApgJsvSchemaSchema.ts";
 export { ApgJsv_ENUM_SCHEMA } from "./src/schemas/ApgJsvEnumSchema.ts";
 export { ApgJsv_INTERFACE_SCHEMA } from "./src/schemas/ApgJsvInterfaceSchema.ts";
-export { ApgJsv_AJV_VALIDATOR_SPECS_SCHEMA } from "./src/schemas/ApgJsvAjvValidatorSpecSchema.ts";
+export { ApgJsv_UTS_SPECABLE_SCHEMA } from "./src/schemas/ApgJsv_UtsSpecableSchema.ts";
 
 export { ApgJsvService } from "./src/classes/ApgJsvService.ts"
 export { eApgJsvCodedErrors } from "./src/enums/eApgJsvCodedErrors.ts";

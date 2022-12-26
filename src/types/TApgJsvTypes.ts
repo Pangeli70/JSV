@@ -9,7 +9,7 @@
 import { IApgJsvProperty } from "../interfaces/IApgJsvProperty.ts";
 
 
-export type TApgJsvType = "boolean" | "number" | "integer" | "string" | "array" | "object" | "null";
+export type TApgJsvType = "boolean" | "number" | "integer" | "string" | "array" | "object" | "null" | string[];
 
 export type TApgJsvProperties = { [key: string]: IApgJsvProperty; };
 

@@ -20,7 +20,7 @@ export class ApgJsvAjvValidator {
 
   /** Validator's schema name */
   schemaName: string;
-  /** Function created by Ajv compilation of the schema */
+  /** Function created by Ajv after the compilation of the schema */
   validateFn: AjvValidateFn | undefined;
   /** Errors detected during the validation */
   errors: AjvError[];
@@ -47,7 +47,7 @@ export class ApgJsvAjvValidator {
         undefined,
         [this.schemaName],
       );
-      const p: Rst.IApgRstPayload = { signature: 'string', data: e.message };
+      const p = new Rst.ApgRstPayload('string', e.message );
       this.status.setPayload(p);
     }
   }
@@ -80,13 +80,12 @@ export class ApgJsvAjvValidator {
         );
       }
 
-      const p: Rst.IApgRstPayload = {
-        signature: 'IApgJsvAjvResult',
-        data: <IApgJsvAjvResult>{
+      const p= new Rst.ApgRstPayload('IApgJsvAjvResult',
+        <IApgJsvAjvResult>{
           validated: aobj,
           errors: this.errors
         }
-      }
+      )
       r.setPayload(p);
     }
     return r;

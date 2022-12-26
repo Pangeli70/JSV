@@ -83,15 +83,21 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
       `${this.addValidator.name}: Some dependencies not found for ${schemaName}:${aschemaDependencies.toString()})`
     );
 
+    schemas.unshift(aschema);
+
     const validator = new ApgJsvAjvValidator(schemaName, schemas);
-    Rst.ApgRstAssert.IsNotOk(validator.status, `${this.addValidator.name}`);
+    Rst.ApgRstAssert.IsNotOk(
+      validator.status,
+      `The status of the validator ${this.addValidator.name} not valid: ${validator.status.AsIApgRst.message} `
+    );
 
     this._schemas.set(schemaName, aschema);
     schemas.push(aschema);
     this._validators.set(schemaName, validator);
-
+    const payload = new Rst.ApgRstPayload("ApgJsvAjvValidator", validator)
+    r.setPayload(payload)
     this._loggable.logEnd();
-
+    return r;
   }
 
   #getSchemasFromDependencies(aschemaNames: string[]) {
@@ -208,7 +214,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     data.forEach(element => {
       if (r.Ok) {
         r = avalidator.validate(element);
-        
+
         if (!r.Ok) {
           const p = new Rst.ApgRstPayload('string', afile);
           r.setPayload(p);
@@ -217,7 +223,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
             failed: i
           });
         }
-        else { 
+        else {
           specs.push(element);
         }
       }

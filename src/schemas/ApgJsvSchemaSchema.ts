@@ -14,7 +14,7 @@ import { IApgJsvSchema } from '../interfaces/IApgJsvSchema.ts';
 
 const rawSchema: IApgJsvSchema = {
   $schema: "http://json-schema.org/schema#",
-  $id: "IApgJsvSchema",
+  $id: "IApgJsvSchema#",
   type: "object",
   properties: {
     $schema: {

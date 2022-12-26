@@ -4,11 +4,12 @@
     // Per altre informazioni, visitare: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "request": "launch",
-            "name": "Run",
+            "name": "Test",
             "type": "node",
-            "program": "${workspaceFolder}/server.ts",
+            "program": "${workspaceFolder}/test.ts",
             "cwd": "${workspaceFolder}",
             "runtimeExecutable": "C:\\Users\\Paolo\\.deno\\bin\\deno.EXE",
             "runtimeArgs": [

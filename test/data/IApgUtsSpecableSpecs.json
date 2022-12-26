@@ -1,0 +1,9 @@
+[{
+  "run": 1,
+  "when": "we try to check something...",
+  "expectMsg": "1) Should check for a valid Json Schema Validation Spec",
+  "expectVal": true,
+  "gotMsg": "NO_ERROR",
+  "gotVal": "valid",
+  "skip": true
+}]

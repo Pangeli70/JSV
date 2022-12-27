@@ -44,7 +44,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
   validatorsSpecsPaths: Map<string, string> = new Map();
 
   get Schemas() {
-    const r = Uts.ApgUtsMap.ToArray(this._schemas);
+    const r = Uts.ApgUtsMap.ToArray(this._schemas) as IApgJsvSchema[];
     return r;
   }
 

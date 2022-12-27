@@ -13,14 +13,41 @@ import { TApgJsvType } from "../types/TApgJsvTypes.ts";
 export interface IApgJsvProperty {
   // Type name 
   type?: TApgJsvType;
+
   // Recursive definition for array types
   items?: IApgJsvProperty;
+
   // Internal or External reference for complex types
   $ref?: string;
-  // Enum values
+
+  // The property is defined by enumerated values
   enum?: string[];
-  // RegExp Pattern
+
+  // This property is constant ad must be deeply equal to the passed value
+  const?: unknown;
+
+
+  // Numeric minimum value
+  minimum?: number;
+  // Numeric maximum value
+  maximum?: number;
+  // The number must be a multiple of the passed value
+  multipleOf?: number
+
+
+  // String minimum number of characters
+  minLenght?: number;
+  // String maximum number of characters
+  maxLenght?: number;
+  // String RegExp Pattern
   pattern?: string;
-  // Description
-  description?: string;
+
+
+  // Array minimum number of items
+  minItems?: number;
+  // Array maximum number of items
+  maxItems?: number;
+  // All items in array must be unique
+  uniqueItems?: boolean
+
 }

@@ -36,7 +36,7 @@ export interface IApgJsvSchema {
   required?: string[],
 
   /** */
-  dependencies?: unknown;  
+  dependencies?: unknown;
   /** The specs used to validate the schema */
   specs?: IApgJsvAjvValidatorSpec[];
 }

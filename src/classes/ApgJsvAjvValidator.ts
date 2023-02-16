@@ -6,6 +6,7 @@
  * @version 0.7.0 [APG 2019/08/15]
  * @version 0.8.0 [APG 2022/03/19] Porting to Deno
  * @version 0.9.2 [APG 2022/11/13] Github Beta
+ * @version 0.9.5 [APG 2023/02/15] Rst Simplification
  * -----------------------------------------------------------------------
 */
 import { Ajv, AjvError, AjvValidateFn, Rst } from '../../deps.ts'
@@ -25,14 +26,17 @@ export class ApgJsvAjvValidator {
   /** Errors detected during the validation */
   errors: AjvError[];
   /** Current status of the object */
-  status: Rst.ApgRst;
+  status: Rst.IApgRst;
 
 
   constructor(aschemaName: string, aschemaDependencies: any[]) {
+
     this.errors = [];
     this.schemaName = aschemaName;
-    this.status = new Rst.ApgRst();
+    this.status = { ok: true };
+
     const ajv = new Ajv.default({ strict: false });
+
     try {
       if (aschemaDependencies.length > 1) {
         ajv.addSchema(aschemaDependencies);
@@ -42,58 +46,56 @@ export class ApgJsvAjvValidator {
         this.validateFn = ajv.compile(aschemaDependencies[0]);
       }
     } catch (e) {
-      this.status = Rst.ApgRstErrors.NotAValidObject(
+      this.status = Rst.ApgRstErrors.Coded(
         eApgJsvCodedErrors.JSV_Ajv_Not_Valid_Params_2,
-        undefined,
         [this.schemaName],
       );
-      const p = new Rst.ApgRstPayload('string', e.message );
-      this.status.setPayload(p);
+      const p: Rst.IApgRstPayload = { signature: 'string', data: e.message };
+      this.status.payload = p;
     }
   }
 
 
   /** @payload IApgJsvAjvResult */
-  validate(aobj: unknown): Rst.ApgRst {
+  validate(aobj: unknown){
 
-    if (!this.status.Ok) {
+    if (!this.status.ok) {
       return this.status;
     }
 
-    let r = new Rst.ApgRst();
+    let r: Rst.IApgRst = { ok: true };
 
     if (!this.validateFn) {
-      r = Rst.ApgRstErrors.NotInitialized(
+      r = Rst.ApgRstErrors.Coded(
         eApgJsvCodedErrors.JSV_Ajv_Not_Initialized_1,
-        undefined,
         [this.schemaName]
       );
     }
     else {
 
-      const valid = this.#validate(aobj);
+      const valid = this.#tryValidate(aobj);
       if (!valid) {
-        r = Rst.ApgRstErrors.NotAValidObject(
+        r = Rst.ApgRstErrors.Coded(
           eApgJsvCodedErrors.JSV_Ajv_Not_A_Valid_Object_1,
-          undefined,
           [this.schemaName]
         );
       }
 
-      const p= new Rst.ApgRstPayload('IApgJsvAjvResult',
-        <IApgJsvAjvResult>{
+      const p: Rst.IApgRstPayload = {
+        signature: 'IApgJsvAjvResult',
+        data: <IApgJsvAjvResult>{
           validated: aobj,
           errors: this.errors
         }
-      )
-      r.setPayload(p);
+      }
+      r.payload = p;
     }
     return r;
 
   }
 
 
-  #validate(aobj: unknown): boolean {
+  #tryValidate(aobj: unknown) {
 
     this.errors = [];
 

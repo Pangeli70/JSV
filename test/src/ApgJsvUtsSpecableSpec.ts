@@ -2,11 +2,12 @@
  * @module [Jsv/Test]
  * @author [APG] ANGELI Paolo Giusto
  * @version 0.9.2 [APG 2022/11/13] Github Beta
+ * @version 0.9.5 [APG 2023/02/15] Rst Simplification
  * ------------------------------------------------------------------------
  */
 
 import { ApgJsvAjvValidator, ApgJsvService, ApgJsv_UTS_SPECABLE_SCHEMA } from "../../mod.ts";
-import { Lgr, StdPath, Uts } from "../../deps.ts";
+import { Lgr, StdPath, Uts, Rst } from "../../deps.ts";
 
 export class ApgJsvUtsSpecableSpec extends Uts.ApgUtsSpecable {
 
@@ -37,14 +38,14 @@ export class ApgJsvUtsSpecableSpec extends Uts.ApgUtsSpecable {
         this.specWhen(`adding the [ApgJsv_UTS_SPECABLE_SCHEMA] validator`);
         this.specWeExpect(`to get a valid validator`)
         let rst = this.jsv.addValidator(ApgJsv_UTS_SPECABLE_SCHEMA, []);
-        r = rst.Ok;
+        r = rst.ok;
         this.specWeGot((r) ? "Validator" : JSON.stringify(rst), r);
 
         this.specWhen(`validating the first item in the array red from file`);
         this.specWeExpect(`to get positive result`)
-        const validator = rst.getPayload("ApgJsvAjvValidator") as ApgJsvAjvValidator;
+        const validator = Rst.ApgRst.ExtractPayload(rst,"ApgJsvAjvValidator") as ApgJsvAjvValidator;
         rst = validator.validate(data[0]);
-        r = rst.Ok;
+        r = rst.ok;
         this.specWeGot((r) ? "a positive result" : JSON.stringify(rst), r);
 
 

@@ -8,6 +8,7 @@
  * @version 0.8.0 [APG 2022/03/19] Porting to Deno
  * @version 0.9.0 [APG 2022/08/16] New JVal and Json schema files removal
  * @version 0.9.2 [APG 2022/11/13] Github Beta
+ * @version 0.9.5 [APG 2023/02/15] Rst Simplification
  * -----------------------------------------------------------------------
  */
 import { StdPath, Rst, Uts, Lgr } from '../../deps.ts';
@@ -65,8 +66,8 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
 
 
   addValidator(aschema: IApgJsvSchema, aschemaDependencies: string[]) {
-    let r = new Rst.ApgRst();
-    r.setPayload(new Rst.ApgRstPayload('string', aschema.$id));
+    let r: Rst.IApgRst = { ok: true };
+    r.payload = { signature: 'string', data: aschema.$id };
     this._loggable.logBegin(this.addValidator.name, r);
 
     const schemaName = aschema.$id.replaceAll("#", "");
@@ -88,14 +89,17 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     const validator = new ApgJsvAjvValidator(schemaName, schemas);
     Rst.ApgRstAssert.IsNotOk(
       validator.status,
-      `The status of the validator ${this.addValidator.name} not valid: ${validator.status.AsIApgRst.message} `
+      `The status of the validator ${this.addValidator.name} not valid: ${validator.status.message} `
     );
 
     this._schemas.set(schemaName, aschema);
     schemas.push(aschema);
     this._validators.set(schemaName, validator);
-    const payload = new Rst.ApgRstPayload("ApgJsvAjvValidator", validator)
-    r.setPayload(payload)
+    const payload: Rst.IApgRstPayload = {
+      signature: "ApgJsvAjvValidator",
+      data: validator
+    };
+    r.payload = payload
     this._loggable.logEnd();
     return r;
   }
@@ -111,29 +115,31 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     return r;
   }
 
+
   /** @payload string[]: Re-Loaded spec files*/
   async loadSchemaSpecs(aspecsPath: string) {
 
-    let r = new Rst.ApgRst();
-    r.setPayload(new Rst.ApgRstPayload('path', aspecsPath));
+    let r: Rst.IApgRst = { ok: true };
+    r.payload = { signature: 'path', data: aspecsPath };
     this._loggable.logBegin(this.loadSchemaSpecs.name, r)
 
     let specFiles: string[] = [];
-    r = new Rst.ApgRst();
+    r = { ok: true };
     const validator = this.#getValidator(this._SCHEMA_SPEC_VALIDATOR, this.loadSchemaSpecs.name);
 
     r = await this.#loadSchemaSpecsInFolder(aspecsPath, validator!);
 
-    if (r.Ok) {
-      specFiles = r.getPayload("string[]") as string[];
+    if (r.ok) {
+      specFiles = Rst.ApgRst.ExtractPayload(r, "string[]") as string[];
       const message = `Loaded successfully ${specFiles.length} schema spec files from folder ${aspecsPath}`;
-      const payload = new Rst.ApgRstPayload('string[]', specFiles);
-      r = new Rst.ApgRst({ message, payload })
+      const payload: Rst.IApgRstPayload = { signature: 'string[]', data: specFiles };
+      r = { ok: true, message, payload }
     }
 
     this._loggable.logEnd(r);
     return r;
   }
+
 
   #getValidator(avalidatorName: string, afunctionName: string) {
     const rawValidator = this._validators.get(avalidatorName);
@@ -145,6 +151,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     return validator;
   }
 
+
   /** 
    * @payload OK: string[]: Loaded spec files
    * @payload KO: IApgAjvValidatorSpecError[]: validation errors
@@ -153,19 +160,17 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     apath: string,
     avalidator: ApgJsvAjvValidator,
   ) {
-    let r = new Rst.ApgRst();
-    r.setPayload(new Rst.ApgRstPayload('path', apath))
-
+    let r: Rst.IApgRst = { ok: true };
+    r.payload = { signature: 'path', data: apath };
     this._loggable.logBegin(this.#loadSchemaSpecsInFolder.name, r);
 
     const errors: IApgJsvAjvValidatorSpecError[] = [];
     const files: string[] = [];
-    r = new Rst.ApgRst();
+    r = { ok: true };
 
     if (!Uts.ApgUtsFs.FolderExistsSync(apath)) {
-      r = Rst.ApgRstErrors.NotFound(
+      r = Rst.ApgRstErrors.Coded(
         eApgJsvCodedErrors.JSV_Schema_Spec_Folder_NotFound_1,
-        undefined,
         [apath]
       );
     }
@@ -174,7 +179,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
 
       for (const fileName of specFiles) {
 
-        if (r.Ok) {
+        if (r.ok) {
           const frg: string[] = fileName.split('.');
           const file = StdPath.join(apath, fileName);
 
@@ -184,9 +189,9 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
       }
     }
 
-    if (r.Ok) {
-      const p = new Rst.ApgRstPayload('string[]', files);
-      r.setPayload(p);
+    if (r.ok) {
+      const p: Rst.IApgRstPayload = { signature: 'string[]', data: files };
+      r.payload = p;
     }
 
     this._loggable.logEnd(r);
@@ -209,15 +214,16 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     const data = <IApgJsvAjvValidatorSpec[]>JSON.parse(rawData);
     const specs: IApgJsvAjvValidatorSpec[] = [];
 
-    let r = new Rst.ApgRst();
+    let r: Rst.IApgRst = { ok: true };
+
     let i = 0;
     data.forEach(element => {
-      if (r.Ok) {
+      if (r.ok) {
         r = avalidator.validate(element);
 
-        if (!r.Ok) {
-          const p = new Rst.ApgRstPayload('string', afile);
-          r.setPayload(p);
+        if (!r.ok) {
+          const p: Rst.IApgRstPayload = { signature: 'string', data: afile };
+          r.payload = p;
           aerrors.push({
             file: afile,
             failed: i
@@ -230,7 +236,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
       i++;
     });
 
-    if (r.Ok) {
+    if (r.ok) {
       this.validatorsSpecs.set(aname, specs);
       this.validatorsSpecsPaths.set(aname, afile);
     }
@@ -248,12 +254,14 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
   ) {
 
     this._loggable.logBegin(this.reloadSpecs.name);
-    let r = new Rst.ApgRst();
+    let r: Rst.IApgRst = { ok: true };
 
     const cpath = this.validatorsSpecsPaths.get(aname);
     if (!cpath) {
-      r = Rst.ApgRstErrors.NotFound(
-        eApgJsvCodedErrors.JSV_Schema_NotFound_1, undefined, [aname]);
+      r = Rst.ApgRstErrors.Coded(
+        eApgJsvCodedErrors.JSV_Schema_NotFound_1,
+        [aname]
+      );
     }
     else {
       r = await this.#loadSpecs(aname, cpath, avalidator, aerrors);
@@ -268,15 +276,15 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
   /** @payload IApgAjvResult */
   validate(aschemaName: string, aobj: unknown) {
 
-    let r = new Rst.ApgRst();
+    let r: Rst.IApgRst = { ok: true };
 
     const validator = this._validators.get(aschemaName);
 
     if (!validator) {
-      r = Rst.ApgRstErrors.NotFound(
+      r = Rst.ApgRstErrors.Coded(
         eApgJsvCodedErrors.JSV_Schema_NotFound_1,
-        undefined,
-        [aschemaName]);
+        [aschemaName]
+      );
     }
     else {
       r = validator!.validate(aobj);

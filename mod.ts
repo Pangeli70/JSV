@@ -1,6 +1,7 @@
 /** -----------------------------------------------------------------------
  * @module [JSV] Json Schema Validation
  * @author [APG] ANGELI Paolo Giusto
+ * @version 0.9.6 [APG 2023/03/04] Total revision
  * ------------------------------------------------------------------------
  */
 
@@ -20,10 +21,11 @@ export type { IApgJsvInterface } from "./src/interfaces/IApgJsvInterface.ts";
 export type { IApgJsvSchema } from "./src/interfaces/IApgJsvSchema.ts";
 export type { IApgJsvFindResult } from "./src/interfaces/IApgJsvFindResult.ts";
 
-export { ApgJsv_SCHEMA_SCHEMA } from "./src/schemas/ApgJsvSchemaSchema.ts";
-export { ApgJsv_ENUM_SCHEMA } from "./src/schemas/ApgJsvEnumSchema.ts";
-export { ApgJsv_INTERFACE_SCHEMA } from "./src/schemas/ApgJsvInterfaceSchema.ts";
-export { ApgJsv_UTS_SPECABLE_SCHEMA } from "./src/schemas/ApgJsv_UtsSpecableSchema.ts";
+export { IApgJsv_SCHEMA_SCHEMA, IApgJsv_SCHEMA_SCHEMA_ID } from "./src/schemas/IApgJsv_SCHEMA_SCHEMA.ts";
+export { IApgJsv_ENUM_SCHEMA, IApgJsv_ENUM_SCHEMA_ID } from "./src/schemas/IApgJsv_ENUM_SCHEMA.ts";
+export { IApgJsv_INTERFACE_SCHEMA, IApgJsv_INTERFACE_SCHEMA_ID } from "./src/schemas/IApgJsv_INTERFACE_SCHEMA.ts";
+export { IApgJsv_UTS_SPECABLE_SCHEMA, IApgJsv_UTS_SPECABLE_SCHEMA_ID } from "./src/schemas/IApgJsv_UTS_SPECABLE_SCHEMA.ts";
 
 export { ApgJsvService } from "./src/classes/ApgJsvService.ts"
-export { eApgJsvCodedErrors } from "./src/enums/eApgJsvCodedErrors.ts";
+
+export { ApgJsv_DOMAIN, ApgJsv_DIALECT } from "./src/types/TApgJsvTypes.ts"

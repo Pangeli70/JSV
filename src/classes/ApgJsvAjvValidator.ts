@@ -7,10 +7,10 @@
  * @version 0.8.0 [APG 2022/03/19] Porting to Deno
  * @version 0.9.2 [APG 2022/11/13] Github Beta
  * @version 0.9.5 [APG 2023/02/15] Rst Simplification
+ * @version 0.9.6 [APG 2023/03/05] Removed coded errors + Total revision
  * -----------------------------------------------------------------------
 */
 import { Ajv, AjvError, AjvValidateFn, Rst } from '../../deps.ts'
-import { eApgJsvCodedErrors } from "../enums/eApgJsvCodedErrors.ts";
 import { IApgJsvAjvResult } from '../interfaces/IApgJsvAjvResult.ts'
 
 
@@ -46,12 +46,12 @@ export class ApgJsvAjvValidator {
         this.validateFn = ajv.compile(aschemaDependencies[0]);
       }
     } catch (e) {
-      this.status = Rst.ApgRstErrors.Coded(
-        eApgJsvCodedErrors.JSV_Ajv_Not_Valid_Params_2,
-        [this.schemaName],
+      this.status = Rst.ApgRstErrors.Parametrized(
+        "Error in Ajv costructor for schema [[%1]]:[%2]",
+        [this.schemaName, e.message],
       );
-      const p: Rst.IApgRstPayload = { signature: 'string', data: e.message };
-      this.status.payload = p;
+      this.status.message = Rst.ApgRst.InterpolateMessage(this.status);
+      this.status.params = undefined;
     }
   }
 
@@ -66,26 +66,34 @@ export class ApgJsvAjvValidator {
     let r: Rst.IApgRst = { ok: true };
 
     if (!this.validateFn) {
-      r = Rst.ApgRstErrors.Coded(
-        eApgJsvCodedErrors.JSV_Ajv_Not_Initialized_1,
+      r = Rst.ApgRstErrors.Parametrized(
+        "Ajv not initialized properly for schema [[%1]]",
         [this.schemaName]
       );
+      r.message = Rst.ApgRst.InterpolateMessage(r);
+      r.params = undefined;
     }
     else {
 
+      let details = "";
+
       const valid = this.#tryValidate(aobj);
       if (!valid) {
-        r = Rst.ApgRstErrors.Coded(
-          eApgJsvCodedErrors.JSV_Ajv_Not_A_Valid_Object_1,
+        r = Rst.ApgRstErrors.Parametrized(
+          "Ajv validation failed using the schema [[%1]]",
           [this.schemaName]
         );
+        details = this.#convertErrors(this.errors);
+        r.message = Rst.ApgRst.InterpolateMessage(r) + ": " + details;
+        r.params = undefined;
       }
 
       const p: Rst.IApgRstPayload = {
         signature: 'IApgJsvAjvResult',
         data: <IApgJsvAjvResult>{
           validated: aobj,
-          errors: this.errors
+          errors: this.errors,
+          details
         }
       }
       r.payload = p;
@@ -115,6 +123,20 @@ export class ApgJsvAjvValidator {
     }
 
     return r;
+  }
+
+  #convertErrors(aerrors: AjvError[]) { 
+    const r: string[] = [];
+    for (const e of aerrors) { 
+      if (e.instancePath != '' ) {
+        r.push(`${e.instancePath}: ${e.message} `)
+      }
+      else { 
+        const params = JSON.stringify(e.params);
+        r.push(`${e.message}: ${params}`);
+      }
+    } 
+    return r.join(",")
   }
 
 }

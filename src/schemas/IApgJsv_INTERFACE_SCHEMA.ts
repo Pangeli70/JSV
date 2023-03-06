@@ -8,15 +8,21 @@
  * @version 0.8.0 [APG 2022/03/19] Porting to Deno
  * @version 0.9.0 [APG 2022/08/16] New JVal and Json schema files removal
  * @version 0.9.2 [APG 2022/11/13] Github Beta
+ * @version 0.9.6 [APG 2023/03/04] Total revision
  * -----------------------------------------------------------------------
  */
-
 import { Uts } from '../../deps.ts';
 import { IApgJsvInterface } from '../interfaces/IApgJsvInterface.ts';
+import { ApgJsv_DOMAIN, ApgJsv_DIALECT } from "../types/TApgJsvTypes.ts";
+
+export const IApgJsv_INTERFACE_SCHEMA_ID = ApgJsv_DOMAIN + 'IApgJsvInterface'
 
 const rawSchema: IApgJsvInterface = {
-  $schema: "http://json-schema.org/schema#",
-  $id: "IApgJsvInterface#",
+  $schema: ApgJsv_DIALECT,
+  $id: IApgJsv_INTERFACE_SCHEMA_ID,
+  $defs: {
+    type: "object"
+  },
   type: "object",
   properties: {
     $schema: {
@@ -40,9 +46,7 @@ const rawSchema: IApgJsvInterface = {
     allErrors: {
       type: "boolean"
     },
-    definitions: {
-      type: "object"
-    },
+
     required: {
       type: "array",
       items: {
@@ -63,7 +67,7 @@ const rawSchema: IApgJsvInterface = {
   ]
 };
 
-export const ApgJsv_INTERFACE_SCHEMA = Uts.ApgUtsObj.DeepFreeze(rawSchema) as IApgJsvInterface;
+export const IApgJsv_INTERFACE_SCHEMA = Uts.ApgUtsObj.DeepFreeze(rawSchema) as IApgJsvInterface;
 
 
 

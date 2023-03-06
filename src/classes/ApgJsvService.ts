@@ -9,6 +9,7 @@
  * @version 0.9.0 [APG 2022/08/16] New JVal and Json schema files removal
  * @version 0.9.2 [APG 2022/11/13] Github Beta
  * @version 0.9.5 [APG 2023/02/15] Rst Simplification
+ * @version 0.9.6 [APG 2023/03/05] Removed coded errors + Total revision
  * -----------------------------------------------------------------------
  */
 import { StdPath, Rst, Uts, Lgr } from '../../deps.ts';
@@ -19,10 +20,9 @@ import { IApgJsvAjvValidatorSpec } from "../interfaces/IApgJsvAjvValidatorSpec.t
 import { IApgJsvAjvValidatorSpecError } from "../interfaces/IApgJsvAjvValidatorSpecError.ts";
 import { IApgJsvSchema } from '../interfaces/IApgJsvSchema.ts';
 
-import { eApgJsvCodedErrors } from '../enums/eApgJsvCodedErrors.ts';
-
-import { ApgJsv_ENUM_SCHEMA } from '../schemas/ApgJsvEnumSchema.ts';
-import { ApgJsv_INTERFACE_SCHEMA } from '../schemas/ApgJsvInterfaceSchema.ts';
+import { IApgJsv_ENUM_SCHEMA } from '../schemas/IApgJsv_ENUM_SCHEMA.ts';
+import { IApgJsv_INTERFACE_SCHEMA } from '../schemas/IApgJsv_INTERFACE_SCHEMA.ts';
+import { IApgJsvAjvResult } from "../interfaces/IApgJsvAjvResult.ts";
 
 
 /** 
@@ -40,71 +40,82 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
   private _schemas: Map<string, IApgJsvSchema> = new Map();
   private _validators: Map<string, ApgJsvAjvValidator> = new Map();
 
+  private _validatorsSpecs: Map<string, IApgJsvAjvValidatorSpec[]> = new Map();
+  private _validatorsSpecsPaths: Map<string, string> = new Map();
 
-  validatorsSpecs: Map<string, IApgJsvAjvValidatorSpec[]> = new Map();
-  validatorsSpecsPaths: Map<string, string> = new Map();
-
-  get Schemas() {
-    const r = Uts.ApgUtsMap.ToArray(this._schemas) as IApgJsvSchema[];
-    return r;
-  }
 
   constructor(alogger: Lgr.ApgLgr) {
+
     super(import.meta.url)
     this._loggable = new Lgr.ApgLgrLoggable(this.CLASS_NAME, alogger);
 
-    const intfSchemaName = ApgJsv_INTERFACE_SCHEMA.$id.replaceAll("#", "");
-    this._schemas.set(intfSchemaName, ApgJsv_INTERFACE_SCHEMA);
-    this._INTERF_VALIDATOR = new ApgJsvAjvValidator(intfSchemaName, [ApgJsv_INTERFACE_SCHEMA]);
+    const intfSchemaName = IApgJsv_INTERFACE_SCHEMA.$id.replaceAll("#", "");
+    this._schemas.set(intfSchemaName, IApgJsv_INTERFACE_SCHEMA);
+    this._INTERF_VALIDATOR = new ApgJsvAjvValidator(intfSchemaName, [IApgJsv_INTERFACE_SCHEMA]);
 
-    const enumSchemaName = ApgJsv_ENUM_SCHEMA.$id.replaceAll("#", "");
-    this._schemas.set(enumSchemaName, ApgJsv_ENUM_SCHEMA);
-    this._ENUM_VALIDATOR = new ApgJsvAjvValidator(enumSchemaName, [ApgJsv_ENUM_SCHEMA]);
+    const enumSchemaName = IApgJsv_ENUM_SCHEMA.$id.replaceAll("#", "");
+    this._schemas.set(enumSchemaName, IApgJsv_ENUM_SCHEMA);
+    this._ENUM_VALIDATOR = new ApgJsvAjvValidator(enumSchemaName, [IApgJsv_ENUM_SCHEMA]);
 
   }
 
 
+  addValidator(aschema: IApgJsvSchema, adependencies: string[]) {
 
-  addValidator(aschema: IApgJsvSchema, aschemaDependencies: string[]) {
     let r: Rst.IApgRst = { ok: true };
     r.payload = { signature: 'string', data: aschema.$id };
     this._loggable.logBegin(this.addValidator.name, r);
 
-    const schemaName = aschema.$id.replaceAll("#", "");
-    const schemaValidator = (schemaName[0] === "e") ?
-      this._ENUM_VALIDATOR! :
-      this._INTERF_VALIDATOR!;
+    const schemaName = aschema.$id;
+    const isEnum = (aschema.$defs && (aschema.$defs as any)!.enumType != undefined);
+    const schemaValidator = isEnum ? this._ENUM_VALIDATOR! : this._INTERF_VALIDATOR!;
+    const schemaType = isEnum ? "Enumeration" : "Interface";
 
     r = schemaValidator.validate(aschema);
-    Rst.ApgRstAssert.IsNotOk(r, `${this.addValidator.name}`)
+    if (!r.ok) {
+      const m = Rst.ApgRst.InterpolateMessage(r);
+      const f = `The schema [${schemaName}] is not a valid JSV ${schemaType}: `
+      const p = Rst.ApgRst.ExtractPayload(r, "IApgJsvAjvResult") as IApgJsvAjvResult;
+      const message = m + f + " / " + p.details;
+      r.message = message;
+      r.params = undefined;
+    }
 
-    const schemas: IApgJsvSchema[] = this.#getSchemasFromDependencies(aschemaDependencies);
-    Rst.ApgRstAssert.IsFalse(
-      (schemas.length === aschemaDependencies.length),
-      `${this.addValidator.name}: Some dependencies not found for ${schemaName}:${aschemaDependencies.toString()})`
-    );
+    const dependencies: IApgJsvSchema[] = [];
+    const schemas: IApgJsvSchema[] = [];
 
-    schemas.unshift(aschema);
+    if (r.ok) {
+      dependencies.push(...this.#getSchemas(adependencies));
+      r.ok = dependencies.length === adependencies.length;
+      if (!r.ok) {
+        r.message += `Some dependencies not found for schema [${schemaName}]:${adependencies.toString()})`
+      }
+    }
 
-    const validator = new ApgJsvAjvValidator(schemaName, schemas);
-    Rst.ApgRstAssert.IsNotOk(
-      validator.status,
-      `The status of the validator ${this.addValidator.name} not valid: ${validator.status.message} `
-    );
+    if (r.ok) {
+      schemas.push(aschema);
+      schemas.push(...dependencies);
+      const validator = new ApgJsvAjvValidator(schemaName, schemas);
+      r = validator.status;
 
-    this._schemas.set(schemaName, aschema);
-    schemas.push(aschema);
-    this._validators.set(schemaName, validator);
-    const payload: Rst.IApgRstPayload = {
-      signature: "ApgJsvAjvValidator",
-      data: validator
-    };
-    r.payload = payload
+
+      if (r.ok) {
+        this._schemas.set(schemaName, aschema);
+        this._validators.set(schemaName, validator);
+        const payload: Rst.IApgRstPayload = {
+          signature: "ApgJsvAjvValidator",
+          data: validator
+        };
+        r.payload = payload
+      }
+    }
+
     this._loggable.logEnd();
     return r;
   }
 
-  #getSchemasFromDependencies(aschemaNames: string[]) {
+
+  #getSchemas(aschemaNames: string[]) {
     const r: IApgJsvSchema[] = [];
     for (let i = 0; i < aschemaNames.length; i++) {
       const schema = this._schemas.get(aschemaNames[i]);
@@ -116,6 +127,34 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
   }
 
 
+  /** @payload IApgAjvResult */
+  validate(aschemaName: string, aobj: unknown) {
+
+    let r: Rst.IApgRst = { ok: true };
+
+    const validator = this._validators.get(aschemaName);
+
+    if (!validator) {
+      r = Rst.ApgRstErrors.Parametrized(
+        'The schema [%1] is not present in the current set of validators',
+        [aschemaName]
+      );
+    }
+    else {
+      r = validator!.validate(aobj);
+    }
+    return r;
+  }
+
+
+  getValidator(aschemaName: string) {
+    return this._validators.get(aschemaName);
+  }
+
+  //#region  Specs ---------------------------------------------------------------
+
+  // TODO @9 Move this stuff in its own class -- APG 20230305
+
   /** @payload string[]: Re-Loaded spec files*/
   async loadSchemaSpecs(aspecsPath: string) {
 
@@ -125,7 +164,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
 
     let specFiles: string[] = [];
     r = { ok: true };
-    const validator = this.#getValidator(this._SCHEMA_SPEC_VALIDATOR, this.loadSchemaSpecs.name);
+    const validator = this._validators.get(this._SCHEMA_SPEC_VALIDATOR);
 
     r = await this.#loadSchemaSpecsInFolder(aspecsPath, validator!);
 
@@ -138,17 +177,6 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
 
     this._loggable.logEnd(r);
     return r;
-  }
-
-
-  #getValidator(avalidatorName: string, afunctionName: string) {
-    const rawValidator = this._validators.get(avalidatorName);
-    Rst.ApgRstAssert.IsUndefined(
-      rawValidator,
-      `validator for ${avalidatorName} in ${afunctionName}`
-    );
-    const validator = rawValidator!;
-    return validator;
   }
 
 
@@ -169,8 +197,8 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     r = { ok: true };
 
     if (!Uts.ApgUtsFs.FolderExistsSync(apath)) {
-      r = Rst.ApgRstErrors.Coded(
-        eApgJsvCodedErrors.JSV_Schema_Spec_Folder_NotFound_1,
+      r = Rst.ApgRstErrors.Parametrized(
+        'Schema Specs folder [%1] not found',
         [apath]
       );
     }
@@ -237,8 +265,8 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     });
 
     if (r.ok) {
-      this.validatorsSpecs.set(aname, specs);
-      this.validatorsSpecsPaths.set(aname, afile);
+      this._validatorsSpecs.set(aname, specs);
+      this._validatorsSpecsPaths.set(aname, afile);
     }
 
     this._loggable.logEnd(r);
@@ -256,10 +284,10 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     this._loggable.logBegin(this.reloadSpecs.name);
     let r: Rst.IApgRst = { ok: true };
 
-    const cpath = this.validatorsSpecsPaths.get(aname);
+    const cpath = this._validatorsSpecsPaths.get(aname);
     if (!cpath) {
-      r = Rst.ApgRstErrors.Coded(
-        eApgJsvCodedErrors.JSV_Schema_NotFound_1,
+      r = Rst.ApgRstErrors.Parametrized(
+        'The schema [%1] is not present in the current set of validators',
         [aname]
       );
     }
@@ -271,28 +299,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     return r;
   }
 
+  //#endregion
 
 
-  /** @payload IApgAjvResult */
-  validate(aschemaName: string, aobj: unknown) {
-
-    let r: Rst.IApgRst = { ok: true };
-
-    const validator = this._validators.get(aschemaName);
-
-    if (!validator) {
-      r = Rst.ApgRstErrors.Coded(
-        eApgJsvCodedErrors.JSV_Schema_NotFound_1,
-        [aschemaName]
-      );
-    }
-    else {
-      r = validator!.validate(aobj);
-    }
-    return r;
-  }
-
-  getValidator(aschemaName: string) {
-    return this._validators.get(aschemaName);
-  }
 }

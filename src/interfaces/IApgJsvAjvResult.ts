@@ -16,5 +16,5 @@ export interface IApgJsvAjvResult {
   /** List of the errors produced bay the Ajv Validator */
   errors: AjvError[];
   /** Is used to add manually further details to the validation result specially if it fails */
-  details?: unknown;
+  details: string;
 }

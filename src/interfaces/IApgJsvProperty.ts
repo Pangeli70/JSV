@@ -1,17 +1,22 @@
 /** -----------------------------------------------------------------------
-* @module [JSV]
-* @author [APG] ANGELI Paolo Giusto
-* @version 0.9.0 [APG 2022/08/16] New JVal and Json schema files removal
-* @version 0.9.2 [APG 2022/11/13] Github Beta
-* -----------------------------------------------------------------------
-*/
+ * @module [JSV]
+ * @author [APG] ANGELI Paolo Giusto
+ * @version 0.9.0 [APG 2022/08/16] New JVal and Json schema files removal
+ * @version 0.9.2 [APG 2022/11/13] Github Beta
+ * @version 0.9.6 [APG 2023/03/04] Total revision
+ * -----------------------------------------------------------------------
+ */
 import { TApgJsvType } from "../types/TApgJsvTypes.ts";
 
 /**
  * A description for a field (property) of the Json schema
  */
 export interface IApgJsvProperty {
-  // Type name 
+  
+  // This is used to describe the meaning of the property
+  description?: string;
+  
+  // Type name
   type?: TApgJsvType;
 
   // Recursive definition for array types

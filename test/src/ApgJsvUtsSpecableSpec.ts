@@ -6,8 +6,8 @@
  * ------------------------------------------------------------------------
  */
 
-import { ApgJsvAjvValidator, ApgJsvService, ApgJsv_UTS_SPECABLE_SCHEMA } from "../../mod.ts";
 import { Lgr, StdPath, Uts, Rst } from "../../deps.ts";
+import { ApgJsvAjvValidator, ApgJsvService, IApgJsv_UTS_SPECABLE_SCHEMA } from "../../mod.ts";
 
 export class ApgJsvUtsSpecableSpec extends Uts.ApgUtsSpecable {
 
@@ -37,13 +37,13 @@ export class ApgJsvUtsSpecableSpec extends Uts.ApgUtsSpecable {
 
         this.specWhen(`adding the [ApgJsv_UTS_SPECABLE_SCHEMA] validator`);
         this.specWeExpect(`to get a valid validator`)
-        let rst = this.jsv.addValidator(ApgJsv_UTS_SPECABLE_SCHEMA, []);
+        let rst = this.jsv.addValidator(IApgJsv_UTS_SPECABLE_SCHEMA, []);
         r = rst.ok;
         this.specWeGot((r) ? "Validator" : JSON.stringify(rst), r);
 
         this.specWhen(`validating the first item in the array red from file`);
         this.specWeExpect(`to get positive result`)
-        const validator = Rst.ApgRst.ExtractPayload(rst,"ApgJsvAjvValidator") as ApgJsvAjvValidator;
+        const validator = Rst.ApgRst.ExtractPayload(rst, "ApgJsvAjvValidator") as ApgJsvAjvValidator;
         rst = validator.validate(data[0]);
         r = rst.ok;
         this.specWeGot((r) ? "a positive result" : JSON.stringify(rst), r);

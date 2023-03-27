@@ -10,6 +10,7 @@
  * @version 0.9.2 [APG 2022/11/13] Github Beta
  * @version 0.9.5 [APG 2023/02/15] Rst Simplification
  * @version 0.9.6 [APG 2023/03/05] Removed coded errors + Total revision
+ * @version 0.9.6.1 [APG 2023/03/18] Debuggin circular dependency JSON conversion
  * -----------------------------------------------------------------------
  */
 import { StdPath, Rst, Uts, Lgr } from '../../deps.ts';
@@ -75,10 +76,13 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     if (!r.ok) {
       const m = Rst.ApgRst.InterpolateMessage(r);
       const f = `The schema [${schemaName}] is not a valid JSV ${schemaType}: `
-      const p = Rst.ApgRst.ExtractPayload(r, "IApgJsvAjvResult") as IApgJsvAjvResult;
-      const message = m + f + " / " + p.details;
-      r.message = message;
-      r.params = undefined;
+      r = Rst.ApgRst.CheckPayload(r, "IApgJsvAjvResult");
+      if (r.ok) { 
+        const ajvResult = r.payload!.data as unknown as IApgJsvAjvResult;
+        const message = m + f + " / " + ajvResult.details;
+        r.message = message;
+        r.params = undefined;
+      }
     }
 
     const dependencies: IApgJsvSchema[] = [];
@@ -96,10 +100,7 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
       schemas.push(aschema);
       schemas.push(...dependencies);
       const validator = new ApgJsvAjvValidator(schemaName, schemas);
-      r = validator.status;
-
-
-      if (r.ok) {
+      if (validator.status.ok) {
         this._schemas.set(schemaName, aschema);
         this._validators.set(schemaName, validator);
         const payload: Rst.IApgRstPayload = {
@@ -107,6 +108,9 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
           data: validator
         };
         r.payload = payload
+      }
+      else { 
+        r = validator.status;
       }
     }
 
@@ -162,17 +166,19 @@ export class ApgJsvService extends Uts.ApgUtsMeta {
     r.payload = { signature: 'path', data: aspecsPath };
     this._loggable.logBegin(this.loadSchemaSpecs.name, r)
 
-    let specFiles: string[] = [];
     r = { ok: true };
     const validator = this._validators.get(this._SCHEMA_SPEC_VALIDATOR);
 
     r = await this.#loadSchemaSpecsInFolder(aspecsPath, validator!);
 
     if (r.ok) {
-      specFiles = Rst.ApgRst.ExtractPayload(r, "string[]") as string[];
-      const message = `Loaded successfully ${specFiles.length} schema spec files from folder ${aspecsPath}`;
-      const payload: Rst.IApgRstPayload = { signature: 'string[]', data: specFiles };
-      r = { ok: true, message, payload }
+      r = Rst.ApgRst.CheckPayload(r, "string[]");
+      if (r.ok) { 
+        const specFiles = r.payload!.data as unknown as string[];
+        const message = `Loaded successfully ${specFiles.length} schema spec files from folder ${aspecsPath}`;
+        const payload: Rst.IApgRstPayload = { signature: 'string[]', data: specFiles };
+        r = { ok: true, message, payload }
+      }
     }
 
     this._loggable.logEnd(r);

@@ -2,6 +2,7 @@
  * @module [JSV] Json Schema Validation
  * @author [APG] ANGELI Paolo Giusto
  * @version 0.9.6 [APG 2023/03/04] Total revision
+ * @version 0.9.6 [APG 2023/03/26] Debuggin circular dependency JSON conversion
  * ------------------------------------------------------------------------
  */
 

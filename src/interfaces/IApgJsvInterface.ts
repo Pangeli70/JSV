@@ -14,8 +14,8 @@ import { IApgJsvSchema } from './IApgJsvSchema.ts';
 
 
 /** 
- * Interface for the Json Schemas that manages interfaces
- * Define as non optional the fields already defined in IApJsvSchema
+ * Interface for the Json Schemas used to validate interfaces
+ * Define as non optional the fields already defined in IApgJsvSchema
  */
 export interface IApgJsvInterface extends IApgJsvSchema {
   properties: TApgJsvProperties;
